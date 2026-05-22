@@ -14,9 +14,12 @@
     "http://localhost/*",
     "http://127.0.0.1/*",
     "https://meet.google.com/*",
+    "https://www.loom.com/*",
+    "https://loom.com/*",
     "https://*.zoom.us/*",
     "https://teams.microsoft.com/*",
-    "https://*.teams.microsoft.com/*"
+    "https://*.teams.microsoft.com/*",
+    "https://teams.live.com/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -29,6 +32,19 @@
         "http://127.0.0.1/*"
       ],
       "js": ["content-script.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://meet.google.com/*",
+        "https://www.loom.com/*",
+        "https://loom.com/*",
+        "https://*.zoom.us/*",
+        "https://teams.microsoft.com/*",
+        "https://*.teams.microsoft.com/*",
+        "https://teams.live.com/*"
+      ],
+      "js": ["meeting-content.js"],
       "run_at": "document_idle"
     }
   ],
