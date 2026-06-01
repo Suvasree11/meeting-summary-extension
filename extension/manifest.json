@@ -12,6 +12,7 @@
   ],
   "host_permissions": [
     "http://localhost/*",
+    "https://meeting-summary-black.vercel.app/*",
     "http://127.0.0.1/*",
     "https://meet.google.com/*",
     "https://www.loom.com/*",
@@ -29,9 +30,12 @@
     {
       "matches": [
         "http://localhost/*",
-        "http://127.0.0.1/*"
+        "http://127.0.0.1/*",
+        "https://meeting-summary-black.vercel.app/*"
       ],
-      "js": ["content-script.js"],
+      "js": [
+        "content-script.js"
+      ],
       "run_at": "document_idle"
     },
     {
@@ -44,7 +48,9 @@
         "https://*.teams.microsoft.com/*",
         "https://teams.live.com/*"
       ],
-      "js": ["meeting-content.js"],
+      "js": [
+        "meeting-content.js"
+      ],
       "run_at": "document_idle"
     }
   ],

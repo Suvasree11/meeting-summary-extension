@@ -26,11 +26,11 @@ function isPresentingNode(node) {
 }
 
 function isSpeakingNode(node) {
-  if (node.matches?.("[data-is-speaking='true'], [data-speaking='true'], [data-active-speaker='true']")) return true;
+  if (node.matches?.("[data-is-speaking='true'], [data-speaking='true'], [data-active-speaker='true'], .VfPpkd-ksKsZd-mWPk3d, .BvBYQ")) return true;
   const label = visibleText(node.getAttribute?.("aria-label") || "");
   if (/\b(speaking|is talking|talking now)\b/i.test(label)) return true;
   return Boolean(
-    node.querySelector?.("[data-is-speaking='true'], [data-speaking='true'], [data-active-speaker='true'], .IisKdb, .gjg47b")
+    node.querySelector?.("[data-is-speaking='true'], [data-speaking='true'], [data-active-speaker='true'], .IisKdb, .gjg47b, div[jsname='VssY5c']")
   );
 }
 
@@ -54,7 +54,7 @@ function pushParticipant(map, participant) {
   }
   existing.muted = existing.muted || participant.muted;
   existing.isPresenting = existing.isPresenting || participant.isPresenting;
-  existing.isSpeaking = existing.isSpeaking || participant.isSpeaking;
+  existing.isSpeaking = participant.isSpeaking;
   existing.status = participant.status || existing.status;
 }
 
@@ -213,5 +213,5 @@ observer.observe(document.documentElement, {
 window.addEventListener("beforeunload", () => {
   chrome.runtime.sendMessage({ source: MEETING_SOURCE, type: "MEETING_UNLOAD" }).catch(() => null);
 });
-window.setInterval(publishParticipants, 4000);
+window.setInterval(publishParticipants, 500);
 publishParticipants();

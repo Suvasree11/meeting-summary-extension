@@ -158,36 +158,47 @@ function teardownStream(capture) {
       track.onended = null;
       track.stop();
     });
+    capture.micStream?.getTracks().forEach((track) => {
+      track.onended = null;
+      track.stop();
+    });
   } catch {
     // Ignore teardown errors.
   }
   capture.mediaStream = null;
+  capture.micStream = null;
 }
 
 /** Route tab audio to speakers and a forked stream for MediaRecorder. */
 async function setupAudioRouting(capture) {
-  const stream = capture.mediaStream;
-  const audioTrack = stream?.getAudioTracks()[0] ?? null;
-  if (!audioTrack) {
-    throw new Error("No audio track in the captured tab stream.");
-  }
-
   const audioContext = new AudioContext();
   if (audioContext.state === "suspended") {
     await audioContext.resume();
   }
 
-  const source = audioContext.createMediaStreamSource(stream);
   const recordDest = audioContext.createMediaStreamDestination();
-  source.connect(audioContext.destination);
-  source.connect(recordDest);
+
+  if (capture.mediaStream && capture.mediaStream.getAudioTracks().length > 0) {
+    const tabSource = audioContext.createMediaStreamSource(capture.mediaStream);
+    tabSource.connect(audioContext.destination);
+    tabSource.connect(recordDest);
+  }
+
+  if (capture.micStream && capture.micStream.getAudioTracks().length > 0) {
+    const micTrack = capture.micStream.getAudioTracks()[0];
+    const micSource = audioContext.createMediaStreamSource(capture.micStream);
+    const micGain = audioContext.createGain();
+    micGain.gain.value = 1.5; // Boost mic level so it's not drowned out by tab audio
+    micSource.connect(micGain);
+    micGain.connect(recordDest); // Do not connect to destination to avoid echo
+  }
 
   capture.audioContext = audioContext;
-  capture.sourceNode = source;
   capture.recordDest = recordDest;
   capture.recordStream = recordDest.stream;
 
   // #region agent log
+  const mixedTrack = recordDest.stream.getAudioTracks()[0];
   fetch("http://127.0.0.1:7474/ingest/be4f0a31-b5ef-428e-b24c-afb9421f2bef", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "b5045b" },
@@ -198,9 +209,12 @@ async function setupAudioRouting(capture) {
       message: "audio routing ready",
       data: {
         contextState: audioContext.state,
-        trackEnabled: audioTrack.enabled,
-        trackMuted: audioTrack.muted,
-        trackReadyState: audioTrack.readyState
+        hasMicStream: Boolean(capture.micStream),
+        hasMicTrack: Boolean(capture.micStream?.getAudioTracks().length),
+        hasMixedTrack: Boolean(mixedTrack),
+        mixedTrackEnabled: mixedTrack?.enabled,
+        mixedTrackMuted: mixedTrack?.muted,
+        mixedTrackReadyState: mixedTrack?.readyState
       },
       timestamp: Date.now()
     })
@@ -306,7 +320,7 @@ async function startRecorder(capture) {
     }
   };
 
-  recorder.start(1200);
+  recorder.start(250);
 }
 
 async function beginCapture(nextSession) {
@@ -322,8 +336,8 @@ async function beginCapture(nextSession) {
     const capture = {
       session: nextSession,
       mediaStream: null,
+      micStream: null,
       audioContext: null,
-      sourceNode: null,
       recordDest: null,
       recordStream: null,
       recorder: null,
@@ -362,6 +376,12 @@ async function beginCapture(nextSession) {
       },
       video: false
     });
+
+    try {
+      capture.micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.warn("Unable to capture microphone:", err);
+    }
 
     if (capture.stopping || activeCapture !== capture) {
       teardownStream(capture);

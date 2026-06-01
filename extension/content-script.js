@@ -4,6 +4,7 @@ const EXT_SOURCE = "meetmind-extension";
 function postToPage(message) {
   window.postMessage({ source: EXT_SOURCE, ...message }, "*");
 }
+
 function extensionUnavailableMessage(error) {
   const text = error instanceof Error ? error.message : String(error ?? "");
   if (text.includes("Extension context invalidated")) {
